@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Converter</title>
+    <style>
+       
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            background: linear-gradient(135deg, white, rgb(166, 43, 154));
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 500px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        p {
+            color: #555;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #f0f0f0;
+        }
+
+        #conversionPrompt {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #bitcoinPrice, #conversionResult {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bitcoin Value Converter</h1>
+        <form id="conversionForm">
+            <p>Do you want to convert the Bitcoin price?</p>
+            <button type="button" onclick="askConversionType('yes')">Yes</button>
+            <button type="button" onclick="askConversionType('no')">No</button>
+        </form>
+        <p id="conversionPrompt" style="display: none;">Convert to USD or INR?</p>
+        <button id="usdButton" style="display: none;" onclick="convertToCurrency('USD')">USD</button>
+        <button id="inrButton" style="display: none;" onclick="convertToCurrency('INR')">INR</button>
+        <p id="bitcoinPrice" style="display: none;">Fetching Bitcoin price...</p>
+        <p id="conversionResult" style="display: none;">Converting...</p>
+    </div>
+
+    <script>
+        function askConversionType(choice) {
+            if (choice === 'yes') {
+                document.getElementById('conversionPrompt').style.display = 'block';
+                document.getElementById('usdButton').style.display = 'block';
+                document.getElementById('inrButton').style.display = 'block';
+            } else {
+                hideConversionElements();
+            }
+        }
+
+        function hideConversionElements() {
+            document.getElementById('conversionPrompt').style.display = 'none';
+            document.getElementById('usdButton').style.display = 'none';
+            document.getElementById('inrButton').style.display = 'none';
+            document.getElementById('bitcoinPrice').style.display = 'none';
+            document.getElementById('conversionResult').style.display = 'none';
+        }
+
+        function convertToCurrency(currency) {
+            hideConversionElements();
+            document.getElementById('bitcoinPrice').style.display = 'block';
+            document.getElementById('conversionResult').style.display = 'block';
+
+            fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=' + currency.toLowerCase())
+                .then(response => response.json())
+                .then(data => {
+                    const bitcoinPrice = data.bitcoin[currency.toLowerCase()];
+                    document.getElementById('bitcoinPrice').textContent = `Current Bitcoin Price: ${currency} ${bitcoinPrice}`;
+
+                    if (currency === 'USD') {
+                        document.getElementById('conversionResult').textContent = `Bitcoin Price in USD: $${bitcoinPrice}`;
+                    } else if (currency === 'INR') {
+                        fetch('https://api.exchangerate-api.com/v4/latest/USD')
+                            .then(response => response.json())
+                            .then(data => {
+                                const exchangeRateINR = data.rates.INR;
+                                const bitcoinPriceINR = bitcoinPrice * exchangeRateINR;
+                                document.getElementById('conversionResult').textContent = `Bitcoin Price in INR: ₹${bitcoinPriceINR.toFixed(2)}`;
+                            })
+                            .catch(error => {
+                                console.error('Error fetching exchange rate:', error);
+                                document.getElementById('conversionResult').textContent = 'Error fetching exchange rate';
+                            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching Bitcoin price:', error);
+                    document.getElementById('bitcoinPrice').textContent = 'Error fetching Bitcoin price';
+                });
+        }
+    </script>
+</body>
+</html>
