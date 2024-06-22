@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitcoin Converter</title>
+    <title>News by Genre</title>
     <style>
-       
         body {
             font-family: Arial, sans-serif;
             background-color: #f8f9fa;
@@ -36,94 +35,92 @@
             color: #555;
         }
 
-        button {
+        button, select {
             padding: 10px 20px;
             font-size: 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            margin: 5px;
         }
 
         button:hover {
             background-color: #f0f0f0;
         }
 
-        #conversionPrompt {
-            text-align: center;
-            margin-bottom: 20px;
+        #newsContainer {
+            margin-top: 20px;
         }
 
-        #bitcoinPrice, #conversionResult {
-            margin-top: 20px;
-            text-align: center;
+        .news-article {
+            background-color: #fff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .news-article h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .news-article p {
+            margin: 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Bitcoin Value Converter</h1>
-        <form id="conversionForm">
-            <p>Do you want to convert the Bitcoin price?</p>
-            <button type="button" onclick="askConversionType('yes')">Yes</button>
-            <button type="button" onclick="askConversionType('no')">No</button>
+        <h1>News by Genre</h1>
+        <form id="genreForm">
+            <p>Select a genre to fetch the latest news:</p>
+            <select id="genre">
+                <option value="business">Business</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="health">Health</option>
+                <option value="science">Science</option>
+                <option value="sports">Sports</option>
+                <option value="technology">Technology</option>
+            </select>
+            <button type="button" onclick="fetchNews()">Fetch News</button>
         </form>
-        <p id="conversionPrompt" style="display: none;">Convert to USD or INR?</p>
-        <button id="usdButton" style="display: none;" onclick="convertToCurrency('USD')">USD</button>
-        <button id="inrButton" style="display: none;" onclick="convertToCurrency('INR')">INR</button>
-        <p id="bitcoinPrice" style="display: none;">Fetching Bitcoin price...</p>
-        <p id="conversionResult" style="display: none;">Converting...</p>
+        <div id="newsContainer"></div>
     </div>
 
     <script>
-        function askConversionType(choice) {
-            if (choice === 'yes') {
-                document.getElementById('conversionPrompt').style.display = 'block';
-                document.getElementById('usdButton').style.display = 'block';
-                document.getElementById('inrButton').style.display = 'block';
-            } else {
-                hideConversionElements();
-            }
-        }
+        const apiKey = '8bce080b681e4845b853e59332c88ea0'; 
 
-        function hideConversionElements() {
-            document.getElementById('conversionPrompt').style.display = 'none';
-            document.getElementById('usdButton').style.display = 'none';
-            document.getElementById('inrButton').style.display = 'none';
-            document.getElementById('bitcoinPrice').style.display = 'none';
-            document.getElementById('conversionResult').style.display = 'none';
-        }
+        function fetchNews() {
+            const genre = document.getElementById('genre').value;
+            const url = `https://newsapi.org/v2/top-headlines?category=${genre}&apiKey=${apiKey}`;
 
-        function convertToCurrency(currency) {
-            hideConversionElements();
-            document.getElementById('bitcoinPrice').style.display = 'block';
-            document.getElementById('conversionResult').style.display = 'block';
+            document.getElementById('newsContainer').innerHTML = 'Fetching news...';
 
-            fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=' + currency.toLowerCase())
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    const bitcoinPrice = data.bitcoin[currency.toLowerCase()];
-                    document.getElementById('bitcoinPrice').textContent = `Current Bitcoin Price: ${currency} ${bitcoinPrice}`;
+                    const newsContainer = document.getElementById('newsContainer');
+                    newsContainer.innerHTML = ''; 
 
-                    if (currency === 'USD') {
-                        document.getElementById('conversionResult').textContent = `Bitcoin Price in USD: $${bitcoinPrice}`;
-                    } else if (currency === 'INR') {
-                        fetch('https://api.exchangerate-api.com/v4/latest/USD')
-                            .then(response => response.json())
-                            .then(data => {
-                                const exchangeRateINR = data.rates.INR;
-                                const bitcoinPriceINR = bitcoinPrice * exchangeRateINR;
-                                document.getElementById('conversionResult').textContent = `Bitcoin Price in INR: ₹${bitcoinPriceINR.toFixed(2)}`;
-                            })
-                            .catch(error => {
-                                console.error('Error fetching exchange rate:', error);
-                                document.getElementById('conversionResult').textContent = 'Error fetching exchange rate';
-                            });
+                    if (data.articles.length > 0) {
+                        data.articles.forEach(article => {
+                            const newsArticle = document.createElement('div');
+                            newsArticle.className = 'news-article';
+                            newsArticle.innerHTML = `
+                                <h2>${article.title}</h2>
+                                <p>${article.description}</p>
+                                <a href="${article.url}" target="_blank">Read more</a>
+                            `;
+                            newsContainer.appendChild(newsArticle);
+                        });
+                    } else {
+                        newsContainer.innerHTML = '<p>No news articles found.</p>';
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching Bitcoin price:', error);
-                    document.getElementById('bitcoinPrice').textContent = 'Error fetching Bitcoin price';
+                    console.error('Error fetching news:', error);
+                    document.getElementById('newsContainer').innerHTML = 'Error fetching news';
                 });
         }
     </script>
